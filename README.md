@@ -37,11 +37,22 @@ Here is an example using the `YCrCb` color space and HOG parameters of `orientat
 
 #### 2. Explain how you settled on your final choice of HOG parameters.
 
-I tried various combinations of `skimage.hog()` parameters and color spaces based on course material. I eventually settled on these following parameters since they gave me the best results: `color_space: YCrCb`, `orientations = 9`, `pix_per_cell = 8`, and `cell_per_block = 2`. Then the test accuracy was 0.9896.
+I tried various combinations of `skimage.hog()` parameters and color spaces based on course material. I eventually settled on these following parameters since they gave me the best results for test accuracy and fewer false positives in the video: `color_space: YCrCb`, `orientations = 9`, `pix_per_cell = 8`, and `cell_per_block = 2`. Then the test accuracy was 0.9896.
 
 #### 3. Describe how (and identify where in your code) you trained a classifier using your selected HOG features (and color features if you used them).
 
-I used a combination of HOG features, histograms of color(number of hist bins = 32) and spatial binning(spatial_size = (32, 32)). The data was split into training and test sets with the test size at 20% of the total data. The resulting feature vector length was 8460. Using the YCrCb color resulted in better performance. Then the test accuracy was 99%.
+I used a combination of HOG features, histograms of color(number of hist bins = 32) and spatial binning(spatial_size = (32, 32)). The range of values of raw data from different feature varies widely. One of the features with a broad range of values may dominate other features. Therefore, the range of all features should be normalized so that each feature contributes approximately proportionately to the final result.　
+
+Here is an example.
+
+![normalize](output_images/normalize.png)
+
+I used Linear Support Vector Classifier to train my data because I usually chose my classifier based on "Choosing the right estimator".
+<http://scikit-learn.org/stable/tutorial/machine_learning_map/>
+
+The data was split into training and test sets with the test size at 20% of the total data. The resulting feature vector length was 8460. Using the YCrCb color resulted in better performance. Then the test accuracy was 99%.
+
+I didn't use other classifiers such as Decision tree or Random Forest. However, if I needed to avoid overfitting, I should try to use Random Forest Classifier.
 
 ### Sliding Window Search
 
@@ -69,11 +80,17 @@ Here's a [link to my video result](./output.mp4)
 
 #### 2. Describe how (and identify where in your code) you implemented some kind of filter for false positives and some method for combining overlapping bounding boxes.
 
-I recorded the positions of positive detections in each frame of the video.  From the positive detections I created a heatmap and then thresholded that map to identify vehicle positions.  I then used `scipy.ndimage.measurements.label()` to identify individual blobs in the heatmap.  I then assumed each blob corresponded to a vehicle.  I constructed bounding boxes to cover the area of each blob detected.  
+**1. Sliding Window Search**
 
-Here's an example result showing the heatmap from a series of frames of video, the result of `scipy.ndimage.measurements.label()` and the bounding boxes then overlaid on the last frame of video:
+In the video processing pipeline I used a multiple-scale sliding window at scales [1.0, 1.5]. Sliding Window will affect drastically the time of processing, because it will mean the times that we need to check if there is car or not.
 
-### Here are some example images:
+**2. Find Car (Process performed on each Window)**
+
+I used `find cars` function in each frame of the video.
+
+I recorded the positions of positive detections in each frame of the video. From the positive detections I created a heatmap and then thresholded (in this case it is 1) that map to identify vehicle positions. I then used `scipy.ndimage.measurements.label()` to identify individual blobs in the heatmap. I then assumed each blob corresponded to a vehicle. I constructed bounding boxes to cover the area of each blob detected. I also added in the `draw_labeled_bboxes` function some validations if two final boxes are very close, it can join them. The video result shows the heatmap of each frame.
+
+### Here are 6 images with their frames, heatmaps and the resulting bounding boxes:
 
 ![test1](output_images/test1.png)
 ![test2](output_images/test2.png)
